@@ -6,16 +6,12 @@
 #include "trajectory_generator.h"
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
-#include "helpers.h"
 #include "spline.h"
+#include "helpers.h"
 #include <iostream>
 
 std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
-        double car_s,
-        double car_x,
-        double car_y,
-        double car_yaw,
-        double car_speed,
+        Car &car,
         double end_path_s,
         std::vector<double> previous_path_x,
         std::vector<double> previous_path_y,
@@ -27,7 +23,7 @@ std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
 
     if (prev_size > 0)
     {
-        car_s = end_path_s;
+        car.s = end_path_s;
     }
 
     bool too_close = false;
@@ -35,7 +31,7 @@ std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
         //car in my lane?
         float d= other_car[6];
         if (d < (2+4*lane+2) && d > (2+4*lane-2)){
-            //      std::cout << " other d is " << d << " and it is in my lane! my d is " << car_d << std::endl;
+            //      std::cout << " other d is " << d << " and it is in my lane! my d is " << car.d << std::endl;
             //speed of the other car
             double  vx = other_car[3];
             double  vy = other_car[4];
@@ -43,18 +39,18 @@ std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
             double check_car_s = other_car[5];
 
             check_car_s += ((double)prev_size*0.02*check_speed); //where if will be?
-  double car_speed_ms = car_speed/ 2.24;
-            // std::cout << "the car will be at s " << check_car_s << " while my is " << car_s << " which makes gap of " << check_car_s-car_s << std::endl;
+  double car_speed_ms = car.speed/ 2.24;
+            // std::cout << "the car will be at s " << check_car.s << " while my is " << car.s << " which makes gap of " << check_car.s-car.s << std::endl;
 
 
             //car in front?
-            if ( (check_car_s > car_s) ) {
+            if ( (check_car_s > car.s) ) {
                 //todo: this is for behavior planning - change lane if possible and worth it
                 //way too close - brake!
-                if ((check_car_s - car_s) < 15) {
+                if ((check_car_s - car.s) < 15) {
                     too_close = true;
                     ref_velocity -= .224 * 1.5;
-                } else if ((check_car_s - car_s) < 30){
+                } else if ((check_car_s - car.s) < 30){
                     too_close = true;
                     if (car_speed_ms > check_speed) {
                         ref_velocity -= .224 /3;
@@ -62,13 +58,13 @@ std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
                         ref_velocity += .224 /3;
                     }
                 }
-//                } else if ((check_car_s - car_s) < 30) { //slow down to reach other speed
+//                } else if ((check_car.s - car.s) < 30) { //slow down to reach other speed
 //                    too_close = true;
-//                    std::cout << "Theirs speed " << check_speed << " my speed " << car_speed/2.24 << std::endl;
-//                    if  (car_speed/2.24 > check_speed) {
+//                    std::cout << "Theirs speed " << check_speed << " my speed " << car.speed/2.24 << std::endl;
+//                    if  (car.speed/2.24 > check_speed) {
 //                        ref_velocity -= .224;
 //                    }
-//                } else if ((check_car_s - car_s) < 40){ //dont speed up if still close
+//                } else if ((check_car.s - car.s) < 40){ //dont speed up if still close
 //                    too_close = true;
 //                }
 
@@ -94,21 +90,21 @@ std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
 
     //reference x, y, yaw states
     // either we will reference the starting pount as where the car is or at previous path end
-    double ref_x = car_x;
-    double ref_y = car_y;
-    double ref_yaw = deg2rad(car_yaw);
+    double ref_x = car.x;
+    double ref_y = car.y;
+    double ref_yaw = Helper::deg2rad(car.yaw);
 
     //almost empty path - use car as starting reference
     if (prev_size < 2) {
         //tangent path
-        double prev_car_x = car_x - cos(car_yaw);
-        double prev_car_y = car_y - sin(car_yaw);
+        double prev_car_x = car.x - cos(car.yaw);
+        double prev_car_y = car.y - sin(car.yaw);
 
         ptsx.push_back(prev_car_x);
-        ptsx.push_back(car_x);
+        ptsx.push_back(car.x);
 
         ptsy.push_back(prev_car_y);
-        ptsy.push_back(car_y);
+        ptsy.push_back(car.y);
     } else {
         // new reference state - previous path end
         ref_x = previous_path_x[prev_size - 1];
@@ -126,12 +122,9 @@ std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
         ptsy.push_back(ref_y);
     }
 
-    vector<double> next_wp0 = getXY(car_s + 30, (2 + 4 * lane), map_waypoints_s, map_waypoints_x,
-                                    map_waypoints_y);
-    vector<double> next_wp1 = getXY(car_s + 60, (2 + 4 * lane), map_waypoints_s, map_waypoints_x,
-                                    map_waypoints_y);
-    vector<double> next_wp2 = getXY(car_s + 90, (2 + 4 * lane), map_waypoints_s, map_waypoints_x,
-                                    map_waypoints_y);
+    vector<double> next_wp0 = map.getXY(car.s + 30, (2 + 4 * lane));
+    vector<double> next_wp1 = map.getXY(car.s + 60, (2 + 4 * lane));
+    vector<double> next_wp2 = map.getXY(car.s + 90, (2 + 4 * lane));
 
     ptsx.push_back(next_wp0[0]);
     ptsx.push_back(next_wp1[0]);
