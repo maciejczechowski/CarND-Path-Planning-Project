@@ -10,12 +10,12 @@
 #include "helpers.h"
 #include <iostream>
 
-std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
-        Car &car,
-        double end_path_s,
-        std::vector<double> previous_path_x,
-        std::vector<double> previous_path_y,
-        std::vector<std::vector<double>> sensor_fusion
+std::vector<std::vector<double>> TrajectoryGenerator::getTrajectory(int lane,
+                                                                    Car &car,
+                                                                    double end_path_s,
+                                                                    std::vector<double> previous_path_x,
+                                                                    std::vector<double> previous_path_y,
+                                                                    std::vector<std::vector<double>> sensor_fusion
 
         ) {
 
@@ -47,10 +47,10 @@ std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
             if ( (check_car_s > car.s) ) {
                 //todo: this is for behavior planning - change lane if possible and worth it
                 //way too close - brake!
-                if ((check_car_s - car.s) < 15) {
+                if ((check_car_s - car.s) < 20) {
                     too_close = true;
                     ref_velocity -= .224 * 1.5;
-                } else if ((check_car_s - car.s) < 30){
+                } else if ((check_car_s - car.s) < 40){
                     too_close = true;
                     if (car_speed_ms > check_speed) {
                         ref_velocity -= .224 /3;
@@ -58,18 +58,7 @@ std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
                         ref_velocity += .224 /3;
                     }
                 }
-//                } else if ((check_car.s - car.s) < 30) { //slow down to reach other speed
-//                    too_close = true;
-//                    std::cout << "Theirs speed " << check_speed << " my speed " << car.speed/2.24 << std::endl;
-//                    if  (car.speed/2.24 > check_speed) {
-//                        ref_velocity -= .224;
-//                    }
-//                } else if ((check_car.s - car.s) < 40){ //dont speed up if still close
-//                    too_close = true;
-//                }
-
-
-            }
+           }
 
             }
 

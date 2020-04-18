@@ -14,10 +14,10 @@ class TrajectoryGenerator {
 public:
     explicit TrajectoryGenerator(Map &track_map ) : map(track_map), ref_velocity(0) {};
 
-    std::vector<std::vector<double>> getNextPoints(int lane, Car &car,
-                  double end_path_s,
-                  std::vector<double> previous_path_x, std::vector<double> previous_path_y,
-                  std::vector<std::vector<double>> sensor_fusion);
+    std::vector<std::vector<double>> getTrajectory(int lane, Car &car,
+                                                   double end_path_s,
+                                                   std::vector<double> previous_path_x, std::vector<double> previous_path_y,
+                                                   std::vector<std::vector<double>> sensor_fusion);
 
 private:
     Map map;

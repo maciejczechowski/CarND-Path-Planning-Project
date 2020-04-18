@@ -81,7 +81,8 @@ int main() {
                      */
 
 
-                    auto nextPoints = tgen.getNextPoints(lane,car, end_path_s, previous_path_x, previous_path_y, sensor_fusion);
+                    auto nextPoints = tgen.getTrajectory(lane, car, end_path_s, previous_path_x, previous_path_y,
+                                                         sensor_fusion);
 
                     msgJson["next_x"] = nextPoints[0];
                     msgJson["next_y"] = nextPoints[1];
