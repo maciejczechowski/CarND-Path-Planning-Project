@@ -43,26 +43,42 @@ std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
             double check_car_s = other_car[5];
 
             check_car_s += ((double)prev_size*0.02*check_speed); //where if will be?
-
+  double car_speed_ms = car_speed/ 2.24;
             // std::cout << "the car will be at s " << check_car_s << " while my is " << car_s << " which makes gap of " << check_car_s-car_s << std::endl;
-            //car in front and gap too small
-            if ( (check_car_s > car_s) && ((check_car_s-car_s) < 30) ){
-                too_close = true;
-                //todo: this is for behavior planning - change lane if possible and worth it
 
-                if (lane > 0){
-                    lane = 0;
+
+            //car in front?
+            if ( (check_car_s > car_s) ) {
+                //todo: this is for behavior planning - change lane if possible and worth it
+                //way too close - brake!
+                if ((check_car_s - car_s) < 15) {
+                    too_close = true;
+                    ref_velocity -= .224 * 1.5;
+                } else if ((check_car_s - car_s) < 30){
+                    too_close = true;
+                    if (car_speed_ms > check_speed) {
+                        ref_velocity -= .224 /3;
+                    } else {
+                        ref_velocity += .224 /3;
+                    }
                 }
+//                } else if ((check_car_s - car_s) < 30) { //slow down to reach other speed
+//                    too_close = true;
+//                    std::cout << "Theirs speed " << check_speed << " my speed " << car_speed/2.24 << std::endl;
+//                    if  (car_speed/2.24 > check_speed) {
+//                        ref_velocity -= .224;
+//                    }
+//                } else if ((check_car_s - car_s) < 40){ //dont speed up if still close
+//                    too_close = true;
+//                }
+
+
             }
 
-        }
+            }
 
     }
-
-    if (too_close){
-        ref_velocity -= .224; //~5m/s
-    } else if (ref_velocity < 49.5){
-
+    if (!too_close && ref_velocity < 49.5){
         ref_velocity += .224;
     }
 
@@ -155,7 +171,7 @@ std::vector<std::vector<double>> TrajectoryGenerator::getNextPoints(int lane,
 
     double x_add_on = 0;
 //fill up the path up to 50 pts
-    for (int i = 0; i <= 50 - previous_path_x.size(); i++) {
+    for (int i = 0; i <= 30 - previous_path_x.size(); i++) {
         const double TICK = 0.02;
         const double VELOCITY_MOD = 2.24; //mph to m/s
 
