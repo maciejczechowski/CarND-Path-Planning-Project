@@ -6,6 +6,8 @@
 #include "json.hpp"
 #include "trajectory_generator.h"
 #include "json_helpers.h"
+#include "sensor_fusion.h"
+#include "planner.h"
 #include "map.h"
 // for convenience
 using nlohmann::json;
@@ -26,12 +28,18 @@ int main() {
 
     //starting lane
 
-    int lane = 1;
     double ref_velocity = 0; //mph
+
+    Predictions predictions = Predictions();
+    SensorFusion sensorFusion = SensorFusion(predictions);
     TrajectoryGenerator tgen = TrajectoryGenerator(map);
     Car car;
 
-    h.onMessage([&map, &car, &lane, &ref_velocity, &tgen]
+    Planner planner = Planner(tgen, sensorFusion, car);
+
+
+
+    h.onMessage([&map, &car, &sensorFusion, &planner]
                         (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                          uWS::OpCode opCode) {
 
@@ -67,10 +75,12 @@ int main() {
                     double end_path_s = j[1]["end_path_s"];
                     double end_path_d = j[1]["end_path_d"];
 
+                    Trajectory previous = {previous_path_x, previous_path_y};
 
                     // Sensor Fusion Data, a list of all other cars on the same side
                     //   of the road.
-                    auto sensor_fusion = j[1]["sensor_fusion"];
+                    vector<vector<double>> sensor_fusion = j[1]["sensor_fusion"];
+                    sensorFusion.setFusionData(sensor_fusion);
 
                     json msgJson;
 
@@ -81,11 +91,10 @@ int main() {
                      */
 
 
-                    auto nextPoints = tgen.getTrajectory(lane, car, end_path_s, previous_path_x, previous_path_y,
-                                                         sensor_fusion);
+                    auto nextTrajectory = planner.Execute(previous);
 
-                    msgJson["next_x"] = nextPoints[0];
-                    msgJson["next_y"] = nextPoints[1];
+                    msgJson["next_x"] = nextTrajectory.x_values;
+                    msgJson["next_y"] = nextTrajectory.y_values;
 
                     auto msg = "42[\"control\"," + msgJson.dump() + "]";
 

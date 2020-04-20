@@ -9,21 +9,19 @@
 #include "map.h"
 #include "car.h"
 
+struct Trajectory{
+    std::vector<double> x_values;
+    std::vector<double> y_values;
+};
 
 class TrajectoryGenerator {
 public:
-    explicit TrajectoryGenerator(Map &track_map ) : map(track_map), ref_velocity(0) {};
+    explicit TrajectoryGenerator(Map &track_map ) : map(track_map) {};
 
-    std::vector<std::vector<double>> getTrajectory(int lane, Car &car,
-                                                   double end_path_s,
-                                                   std::vector<double> previous_path_x, std::vector<double> previous_path_y,
-                                                   std::vector<std::vector<double>> sensor_fusion);
+    Trajectory getTrajectory(int lane, double targetVelocity, Car &car, Trajectory &previous_path);
 
 private:
     Map map;
-    double ref_velocity;
-
-
 
 };
 

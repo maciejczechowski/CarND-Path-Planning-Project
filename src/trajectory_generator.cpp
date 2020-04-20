@@ -10,68 +10,9 @@
 #include "helpers.h"
 #include <iostream>
 
-std::vector<std::vector<double>> TrajectoryGenerator::getTrajectory(int lane,
-                                                                    Car &car,
-                                                                    double end_path_s,
-                                                                    std::vector<double> previous_path_x,
-                                                                    std::vector<double> previous_path_y,
-                                                                    std::vector<std::vector<double>> sensor_fusion
+Trajectory TrajectoryGenerator::getTrajectory(int lane, double targetVelocity, Car &car, Trajectory &previous_path) {
 
-        ) {
-
-    int prev_size = previous_path_x.size();
-
-    if (prev_size > 0)
-    {
-        car.s = end_path_s;
-    }
-
-    bool too_close = false;
-    for (auto & other_car : sensor_fusion){
-        //car in my lane?
-        float d= other_car[6];
-        if (d < (2+4*lane+2) && d > (2+4*lane-2)){
-            //      std::cout << " other d is " << d << " and it is in my lane! my d is " << car.d << std::endl;
-            //speed of the other car
-            double  vx = other_car[3];
-            double  vy = other_car[4];
-            double check_speed = sqrt(vx*vx + vy*vy);
-            double check_car_s = other_car[5];
-
-            check_car_s += ((double)prev_size*0.02*check_speed); //where if will be?
-  double car_speed_ms = car.speed/ 2.24;
-            // std::cout << "the car will be at s " << check_car.s << " while my is " << car.s << " which makes gap of " << check_car.s-car.s << std::endl;
-
-
-            //car in front?
-            if ( (check_car_s > car.s) ) {
-                //todo: this is for behavior planning - change lane if possible and worth it
-                //way too close - brake!
-                if ((check_car_s - car.s) < 20) {
-                    too_close = true;
-                    ref_velocity -= .224 * 1.5;
-                } else if ((check_car_s - car.s) < 40){
-                    too_close = true;
-                    if (car_speed_ms > check_speed) {
-                        ref_velocity -= .224 /3;
-                    } else {
-                        ref_velocity += .224 /3;
-                    }
-                }
-           }
-
-            }
-
-    }
-    if (!too_close && ref_velocity < 49.5){
-        ref_velocity += .224;
-    }
-
-    if (ref_velocity < 0){
-        ref_velocity = 0;
-    }
-       std::cout << "too close " << too_close << std::endl;
-       std::cout << "reference velocity " << ref_velocity << std::endl;
+    auto prev_size = previous_path.x_values.size();
     //a (spare) list of waypoints - spaced evenly at 30m
     //serves as an input for spline fit
     std::vector<double> ptsx;
@@ -84,7 +25,7 @@ std::vector<std::vector<double>> TrajectoryGenerator::getTrajectory(int lane,
     double ref_yaw = Helper::deg2rad(car.yaw);
 
     //almost empty path - use car as starting reference
-    if (prev_size < 2) {
+    if (previous_path.x_values.size() < 2) {
         //tangent path
         double prev_car_x = car.x - cos(car.yaw);
         double prev_car_y = car.y - sin(car.yaw);
@@ -96,11 +37,11 @@ std::vector<std::vector<double>> TrajectoryGenerator::getTrajectory(int lane,
         ptsy.push_back(car.y);
     } else {
         // new reference state - previous path end
-        ref_x = previous_path_x[prev_size - 1];
-        ref_y = previous_path_y[prev_size - 1];
+        ref_x = previous_path.x_values[prev_size - 1];
+        ref_y = previous_path.y_values[prev_size - 1];
 
-        double ref_x_prev = previous_path_x[prev_size - 2];
-        double ref_y_prev = previous_path_y[prev_size - 2];
+        double ref_x_prev = previous_path.x_values[prev_size - 2];
+        double ref_y_prev = previous_path.y_values[prev_size - 2];
         ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
 
         // two points that make path tangent to the previous end
@@ -141,9 +82,9 @@ std::vector<std::vector<double>> TrajectoryGenerator::getTrajectory(int lane,
     vector<double> next_y_vals;
 
     //start with previous path
-    for (int i = 0; i < previous_path_x.size(); i++) {
-        next_x_vals.push_back(previous_path_x[i]);
-        next_y_vals.push_back(previous_path_y[i]);
+    for (int i = 0; i < prev_size; i++) {
+        next_x_vals.push_back(previous_path.x_values[i]);
+        next_y_vals.push_back(previous_path.y_values[i]);
     }
 
     // calculate how to break up spline points so we travel at desired velocity
@@ -153,12 +94,10 @@ std::vector<std::vector<double>> TrajectoryGenerator::getTrajectory(int lane,
 
     double x_add_on = 0;
 //fill up the path up to 50 pts
-    for (int i = 0; i <= 30 - previous_path_x.size(); i++) {
-        const double TICK = 0.02;
-        const double VELOCITY_MOD = 2.24; //mph to m/s
+    for (int i = 0; i <= 30 - prev_size; i++) {
 
         double N = (target_dist /
-                    (TICK * ref_velocity / VELOCITY_MOD)); //number of points to match velocity
+                    (Helper::TICK * Helper::mph2mps(targetVelocity))); //number of points to match velocity
         double x_point = x_add_on + target_x / N;
         double y_point = s(x_point);
 
@@ -179,6 +118,5 @@ std::vector<std::vector<double>> TrajectoryGenerator::getTrajectory(int lane,
 
 
     }
-    std::vector<std::vector<double>> result { next_x_vals, next_y_vals};
-    return result;
+     return { next_x_vals, next_y_vals};
 }
