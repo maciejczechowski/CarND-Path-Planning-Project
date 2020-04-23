@@ -8,11 +8,7 @@
 #include <vector>
 #include "map.h"
 #include "car.h"
-
-struct Trajectory{
-    std::vector<double> x_values;
-    std::vector<double> y_values;
-};
+#include "domain.h"
 
 class TrajectoryGenerator {
 public:

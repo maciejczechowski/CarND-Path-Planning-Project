@@ -4,50 +4,161 @@
 
 #include "planner.h"
 #include "helpers.h"
-#import <iostream>
+#include <iostream>
+#include <string>
+
+std::string StateNames[3] =
+        {
+                "FOLLOW",
+                "CHANGE_LEFT",
+                "CHANGE_RIGHT"
+        };
+
 
 Trajectory Planner::Execute(Trajectory &previousPath) {
 
-//todo: check for flags
 //check for collisions
-    return FollowTheLane(previousPath);
+
+    int currentLane = Helper::getLane(car.d);
+    if (Helper::isFullyOnLane(car.d)) {
+        if (currentLane != this->current_lane) {
+            std::cout << " Fully chaned lane to: " << currentLane << std::endl;
+            this->current_lane = currentLane;
+        }
+
+
+    }
+
+    auto trajectories = CalculateOptions(previousPath);
+
+
+    Trajectory winning = trajectories[0];
+    double winningCost = 99999999;
+
+    std::string costDisplay = "costs: ";
+   // std::cout << "costs ";
+    for (auto &t: trajectories) {
+        double costValue = cost.calculateCost(t);
+        costDisplay += "\t" + StateNames[t.forState]+ ": "+ std::to_string(costValue);
+
+
+      //  std::cout << "\t" << t.forState << ": " <<costValue;
+        if (costValue < winningCost) {
+            winningCost = costValue;
+            winning = t;
+        }
+    }
+   // std::cout << std::endl;
+
+   if (current_state != winning.forState){
+
+       std::cout << costDisplay << std::endl;
+       std::cout << "Swich to state: " << StateNames[winning.forState] << std::endl << std::endl;
+   }
+    desired_lane = winning.finalLane;
+    current_state = winning.forState;
+    ref_velocity = winning.velocity;
+
+    return winning;
+}
+
+vector<Trajectory> Planner::CalculateOptions(Trajectory &previousPath)
+{
+    vector<Trajectory> trajectory_options;
+
+    switch (current_state) {
+        case follow_lane:
+
+            trajectory_options.push_back(GetTrajectory(previousPath, current_lane, follow_lane));
+
+            if (current_lane > 0){
+                trajectory_options.push_back(GetTrajectory(previousPath, current_lane - 1, change_left));
+            }
+
+            if (current_lane < 2){
+                trajectory_options.push_back(GetTrajectory(previousPath, current_lane + 1, change_right));
+            }
+
+            break;
+        case change_left:
+                if (current_lane == desired_lane){  //finished lane change - switch to follow
+                trajectory_options.push_back( GetTrajectory(previousPath, current_lane, follow_lane));
+
+            } else { //not finished
+                trajectory_options.push_back( GetTrajectory(previousPath, desired_lane, change_left)); //continue maneuver
+            //   trajectory_options.push_back( GetTrajectory(previousPath, current_lane, change_right)); //abort maneuver
+            }
+            break;
+
+        case change_right:
+
+            if (current_lane == desired_lane){  //finished lane change - switch to follow
+                trajectory_options.push_back( GetTrajectory(previousPath, current_lane, follow_lane));
+
+            } else { //not finished
+                trajectory_options.push_back( GetTrajectory(previousPath, desired_lane, change_right)); //continue maneuver
+              // trajectory_options.push_back( GetTrajectory(previousPath, current_lane, change_left)); //abort maneuver
+            }
+
+    }
+    return trajectory_options;
 }
 
 
-Trajectory Planner::FollowTheLane(Trajectory &previousPath) {
-    UpdateDesiredVelocity();
-    auto trajectory = trajectoryGenerator.getTrajectory(current_lane, ref_velocity, car, previousPath);
+Trajectory Planner::GetTrajectory(Trajectory &previousPath, int forLane, State forState) {
+    double velocity=UpdateDesiredVelocity();
+    auto trajectory = trajectoryGenerator.getTrajectory(forLane, velocity, car, previousPath);
+    trajectory.finalLane = forLane;
+    trajectory.forState = forState;
+    trajectory.velocity = velocity;
     return trajectory;
 }
 
-void Planner::UpdateDesiredVelocity() {
-    auto followedCar = sensorFusion.getVelocityAndDistanceToNearestInLane(current_lane, car);
+//Trajectory Planner::ChangeLaneLeft(Trajectory &previousPath, int desiredLane) {
+//
+//    auto trajectory = trajectoryGenerator.getTrajectory(desiredLane, ref_velocity, car, previousPath);
+//    trajectory.finalLane = desiredLane;
+//    trajectory.forState = change_left;
+//    return trajectory;
+//}
+//
+//Trajectory Planner::ChangeLaneRight(Trajectory &previousPath, int desiredLane) {
+//
+//    auto trajectory = trajectoryGenerator.getTrajectory(desiredLane, ref_velocity, car, previousPath);
+//    trajectory.finalLane = desiredLane;
+//    return trajectory;
+//}
+
+double Planner::UpdateDesiredVelocity() {
+    auto followedCar = sensorFusion.getVelocityAndDistanceToNearestInLane(current_lane, desired_lane, car);
     double distanceToOther = followedCar[1];
     double speedOfOther = followedCar[0];
     double speedOfUs = Helper::mph2mps(car.speed);
 
+    double next_velocity = ref_velocity;
     bool following = false;
     //way too close - brake!
-std::cout << "my distance to following vehicle is " << distanceToOther << std::endl;
     if (distanceToOther < 20) {
         following = true;
-        ref_velocity -= Helper::DesiredVelocityChange * 1.5;
+        next_velocity -= Helper::DesiredVelocityChange * 1.5;
     } else if (distanceToOther < 40) {
         following = true;
         if (speedOfUs > speedOfOther) {
-            ref_velocity -= .224 / 3;
+            next_velocity -= Helper::DesiredVelocityChange;
         } else {
-            ref_velocity += .224 / 3;
+            next_velocity += Helper::DesiredVelocityChange;
         }
     }
 
-    if (!following && ref_velocity < 49.5) {
-        ref_velocity += Helper::DesiredVelocityChange;
+    if (!following && next_velocity < car.desired_speed) {
+        next_velocity += Helper::DesiredVelocityChange;
     }
 
-    if (ref_velocity < 0) {
-        ref_velocity = 0;
+    if (next_velocity < 0) {
+        next_velocity = 0;
+    } else if (next_velocity > car.desired_speed){
+        next_velocity = car.desired_speed;
     }
 
-
+    return next_velocity;
 }

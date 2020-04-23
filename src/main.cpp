@@ -35,7 +35,8 @@ int main() {
     TrajectoryGenerator tgen = TrajectoryGenerator(map);
     Car car;
 
-    Planner planner = Planner(tgen, sensorFusion, car);
+    Cost cost = Cost(sensorFusion, car, map);
+    Planner planner = Planner(tgen, sensorFusion, car, cost);
 
 
 
@@ -76,6 +77,7 @@ int main() {
                     double end_path_d = j[1]["end_path_d"];
 
                     Trajectory previous = {previous_path_x, previous_path_y};
+                    previous.end_path_s = end_path_s;
 
                     // Sensor Fusion Data, a list of all other cars on the same side
                     //   of the road.

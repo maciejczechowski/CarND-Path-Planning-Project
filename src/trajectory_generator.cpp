@@ -9,10 +9,19 @@
 #include "spline.h"
 #include "helpers.h"
 #include <iostream>
+#include <algorithm>
+
 
 Trajectory TrajectoryGenerator::getTrajectory(int lane, double targetVelocity, Car &car, Trajectory &previous_path) {
 
+    double car_s = car.s;
     auto prev_size = previous_path.x_values.size();
+
+    if (prev_size > 0)
+    {
+        car_s = previous_path.end_path_s;
+    }
+
     //a (spare) list of waypoints - spaced evenly at 30m
     //serves as an input for spline fit
     std::vector<double> ptsx;
@@ -27,8 +36,8 @@ Trajectory TrajectoryGenerator::getTrajectory(int lane, double targetVelocity, C
     //almost empty path - use car as starting reference
     if (previous_path.x_values.size() < 2) {
         //tangent path
-        double prev_car_x = car.x - cos(car.yaw);
-        double prev_car_y = car.y - sin(car.yaw);
+        double prev_car_x = car.x - cos(ref_yaw);
+        double prev_car_y = car.y - sin(ref_yaw);
 
         ptsx.push_back(prev_car_x);
         ptsx.push_back(car.x);
@@ -45,16 +54,24 @@ Trajectory TrajectoryGenerator::getTrajectory(int lane, double targetVelocity, C
         ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
 
         // two points that make path tangent to the previous end
-        ptsx.push_back(ref_x_prev);
-        ptsx.push_back(ref_x);
 
-        ptsy.push_back(ref_y_prev);
+
+        if (ref_x_prev < ref_x) {
+            ptsx.push_back(ref_x_prev);
+            ptsy.push_back(ref_y_prev);
+        }
+
+        ptsx.push_back(ref_x);
         ptsy.push_back(ref_y);
+
     }
 
-    vector<double> next_wp0 = map.getXY(car.s + 30, (2 + 4 * lane));
-    vector<double> next_wp1 = map.getXY(car.s + 60, (2 + 4 * lane));
-    vector<double> next_wp2 = map.getXY(car.s + 90, (2 + 4 * lane));
+
+    double target_d = (2 + 4 * lane);
+
+    vector<double> next_wp0 = map.getXY(car_s + 30,  target_d);
+    vector<double> next_wp1 = map.getXY(car_s + 60,  target_d);
+    vector<double> next_wp2 = map.getXY(car_s + 90,  target_d);
 
     ptsx.push_back(next_wp0[0]);
     ptsx.push_back(next_wp1[0]);
@@ -76,7 +93,11 @@ Trajectory TrajectoryGenerator::getTrajectory(int lane, double targetVelocity, C
     }
 
     tk::spline s;
-    s.set_points(ptsx, ptsy);
+    if (!s.set_points(ptsx, ptsy)){
+        std::cout << " Invalid path" << std::endl;
+
+        return previous_path;
+    }
 
     vector<double> next_x_vals;
     vector<double> next_y_vals;
@@ -93,8 +114,8 @@ Trajectory TrajectoryGenerator::getTrajectory(int lane, double targetVelocity, C
     double target_dist = sqrt(target_x * target_x + target_y * target_y);
 
     double x_add_on = 0;
-//fill up the path up to 50 pts
-    for (int i = 0; i <= 30 - prev_size; i++) {
+
+    for (int i = 0; i <= Helper::LookForward - prev_size; i++) {
 
         double N = (target_dist /
                     (Helper::TICK * Helper::mph2mps(targetVelocity))); //number of points to match velocity
@@ -113,10 +134,14 @@ Trajectory TrajectoryGenerator::getTrajectory(int lane, double targetVelocity, C
         x_point += ref_x;
         y_point += ref_y;
 
+
+
         next_x_vals.push_back(x_point);
         next_y_vals.push_back(y_point);
 
 
     }
-     return { next_x_vals, next_y_vals};
+
+
+     return { next_x_vals, next_y_vals, {}, lane};
 }

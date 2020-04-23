@@ -7,36 +7,44 @@
 
 #include "trajectory_generator.h"
 #include "sensor_fusion.h"
-
-enum State {
-    follow_lane
-};
+#include "cost.h"
 
 class Planner {
 
 public:
-    Planner(TrajectoryGenerator &traj, SensorFusion &fusion, Car &autoCar)
+    Planner(TrajectoryGenerator &traj, SensorFusion &fusion, Car &autoCar, Cost &cost)
             : trajectoryGenerator(traj),
               sensorFusion(fusion),
               car(autoCar),
-              current_lane(1) {}
+              current_lane(1),
+              cost(cost),
+              current_state(follow_lane){}
 
     Trajectory Execute(Trajectory &previousPath);
+
+
 
 private:
     State current_state;
     TrajectoryGenerator &trajectoryGenerator;
     SensorFusion &sensorFusion;
+    Cost& cost;
 
     int current_lane;
+    int desired_lane;
     Car &car;
 
-    Trajectory FollowTheLane(Trajectory &previousPath);
+   // Trajectory FollowTheLane(Trajectory &previousPath);
 
     double ref_velocity;
 
-    void UpdateDesiredVelocity();
+    double UpdateDesiredVelocity();
 
+ //   Trajectory ChangeLaneLeft(Trajectory &previousPath);
+  //  Trajectory ChangeLaneRight(Trajectory &previousPath);
+    Trajectory GetTrajectory(Trajectory &previousPath, int forLane, State forState);
+
+    vector<Trajectory> CalculateOptions(Trajectory &previousPath);
 };
 
 

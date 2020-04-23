@@ -19,7 +19,11 @@ public:
     explicit SensorFusion(Predictions &predictionModule) : predictions(predictionModule) {};
     void setFusionData(vector<vector<double>> &fusionData);
     //returns data in form {velocity, distance} of the nearest car in the given lane
-    vector<double> getVelocityAndDistanceToNearestInLane(int lane, Car &car);
+    vector<double> getVelocityAndDistanceToNearestInLane(int current_lane, int target_lane, Car &car);
+
+    vector<OtherCar*> getAheadAndBehind(int lane, Car &car);
+    vector<OtherCar*> getAheadAndBehind(Car &car);
+
 private:
     Predictions& predictions;
     vector<vector<double>> fusion_data;
