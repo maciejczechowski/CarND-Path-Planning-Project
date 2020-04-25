@@ -23,6 +23,8 @@ class Trajectory {
 public:
     std::vector<double> x_values;
     std::vector<double> y_values;
+    std::vector<double> s_values;
+    std::vector<double> d_values;
     std::vector<double> theta;
     int finalLane;
     double velocity;

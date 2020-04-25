@@ -23,7 +23,7 @@ public:
     constexpr static const double s_wraps_at = 6945.554;
 
     constexpr static const int LookForward = 50; // 50 ticks = 1s
-    constexpr static const int SafeDistancePass = 50; // keep 50m ahead/behind when changing lanes
+    constexpr static const int SafeDistancePass = 30;
 
     static constexpr double pi() { return M_PI; }
 

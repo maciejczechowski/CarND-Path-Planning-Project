@@ -12,9 +12,14 @@
 using std::vector;
 
 class Predictions {
+
 public:
+    explicit Predictions(Map& map) : map(map) {}
     //predict the other car s,d coordinates in given stepsNum
     Trajectory* predictTrajectory(OtherCar &car, int stepsNum);
+
+private:
+    Map& map;
 };
 
 

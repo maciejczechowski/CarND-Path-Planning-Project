@@ -30,7 +30,7 @@ int main() {
 
     double ref_velocity = 0; //mph
 
-    Predictions predictions = Predictions();
+    Predictions predictions = Predictions(map);
     SensorFusion sensorFusion = SensorFusion(predictions);
     TrajectoryGenerator tgen = TrajectoryGenerator(map);
     Car car;

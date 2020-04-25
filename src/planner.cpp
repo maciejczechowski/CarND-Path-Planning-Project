@@ -48,7 +48,7 @@ Trajectory Planner::Execute(Trajectory &previousPath) {
             winning = t;
         }
     }
-   // std::cout << std::endl;
+    std::cout << costDisplay << std::endl;
 
    if (current_state != winning.forState){
 
@@ -58,7 +58,7 @@ Trajectory Planner::Execute(Trajectory &previousPath) {
     desired_lane = winning.finalLane;
     current_state = winning.forState;
     ref_velocity = winning.velocity;
-
+//std::cout << "new states" << winning.x_values.size() << std::endl;
     return winning;
 }
 
@@ -138,15 +138,21 @@ double Planner::UpdateDesiredVelocity() {
     double next_velocity = ref_velocity;
     bool following = false;
     //way too close - brake!
-    if (distanceToOther < 20) {
+    if (distanceToOther < 10) {
         following = true;
         next_velocity -= Helper::DesiredVelocityChange * 1.5;
-    } else if (distanceToOther < 40) {
+        std::cout << "BRAKE!" << std::endl;
+    } else
+        if (distanceToOther < 40) {
         following = true;
+        auto ds = Helper::DesiredVelocityChange ;
         if (speedOfUs > speedOfOther) {
-            next_velocity -= Helper::DesiredVelocityChange;
+
+          //  std::cout << "Lowering velocity " <<  std::min(ds, speedOfUs - speedOfOther)<< std::endl;
+            next_velocity -= std::min(ds, speedOfUs - speedOfOther);
         } else {
-            next_velocity += Helper::DesiredVelocityChange;
+          //  std::cout << "Raising velocity our/ther" << std::max(ds, speedOfOther-speedOfUs) << std::endl;
+            next_velocity += std::min(ds, speedOfOther-speedOfUs);
         }
     }
 

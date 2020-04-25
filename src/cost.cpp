@@ -10,8 +10,8 @@ double Cost::calculateCost(Trajectory &trajectory) {
 
     double cost = calculateEfficiencyCost(trajectory.finalLane)
                   + calculateCollisionCost(trajectory)
-                  + calculateLaneChangeCost(trajectory.finalLane) * 0.1
-                  + CalculateVelocityCost(trajectory);
+                  + calculateLaneChangeCost(trajectory.finalLane) * 0.05
+                  + CalculateVelocityCost(trajectory) * 0;
     return cost;
 
 }
@@ -42,6 +42,7 @@ double Cost::CalculateVelocityCost(Trajectory &trajectory) {
     return cost;
 }
 
+/*
 
 double Cost::calculateCollisionCost(Trajectory &trajectory) {
 
@@ -58,10 +59,10 @@ double Cost::calculateCollisionCost(Trajectory &trajectory) {
     auto m_right = our_bbox[2];
     auto m_bottom = our_bbox[3];
 
-    m_left -= Helper::SafeDistancePass; //left
-    m_top -= Helper::SafeDistancePass; //top
-    m_right += Helper::SafeDistancePass; //right
-    m_bottom += Helper::SafeDistancePass; //bottom
+//    m_left -= Helper::SafeDistancePass; //left
+//    m_top -= Helper::SafeDistancePass; //top
+//    m_right += Helper::SafeDistancePass; //right
+//    m_bottom += Helper::SafeDistancePass; //bottom
 
 
 
@@ -78,7 +79,49 @@ double Cost::calculateCollisionCost(Trajectory &trajectory) {
             //do we collide?
             if ((m_left < o_right) && (m_right > o_left) && (m_top > o_bottom) && (m_bottom < o_top)) {
 
-                if (Helper::getLane(car.d) == Helper::getLane(otherCar->curr_d)) {
+                if (Helper::getLane(car.d) != Helper::getLane(otherCar->curr_d)) {
+                    cost += 1000;
+                }
+//                } else {
+//                    cost += 10000;
+//                }
+            }
+        }
+    }
+
+    return cost;
+}
+*/
+
+double Cost::calculateCollisionCost(Trajectory &trajectory) {
+
+    //  std::cout << std::endl << " Checking T: " << trajectory.finalLane << std::endl;
+    int ourLane = Helper::getLane(car.d);
+
+    double cost = 0;
+    vector<OtherCar *> aheadAndBehind = sensorFusion.getAheadAndBehind(car);
+
+    for (auto &otherCar: aheadAndBehind) {
+
+        auto otherLane = Helper::getLane(otherCar->curr_d);
+        auto ourLane = Helper::getLane(car.d);
+
+        if (otherLane != ourLane && otherLane != trajectory.finalLane )
+        {
+            continue;
+        }
+        assert(trajectory.s_values.size() == otherCar->predictedTrajectory->s_values.size());
+        for (int i = 0; i < trajectory.x_values.size()-1; i++) {
+            auto otherX = otherCar->predictedTrajectory->x_values[i];
+            auto otherY = otherCar->predictedTrajectory->y_values[i];
+            auto ourX = trajectory.x_values[i];
+            auto ourY = trajectory.y_values[i];
+
+            auto dist = Helper::distance(ourX, ourY, otherX, otherY);
+            if (dist < 10) {
+              //  std::cout << "Collsion with s/d" << fabs(ourS - otherS) << " / " << (fabs(ourD - otherD)) << " " << std::endl;
+                if (Helper::getLane(car.d) ==trajectory.finalLane) {
+
                     cost += 1000;
                 } else {
                     cost += 10000;
@@ -95,7 +138,7 @@ double Cost::getLaneSpeed(int lane) {
     vector<OtherCar *> cars = sensorFusion.getAheadAndBehind(lane, car);
 
     OtherCar *ahead = cars[0];
-    if (ahead == nullptr || ahead->curr_s - car.s > 200) { //if vehicle is far away, do not take into account
+    if (ahead == nullptr || ahead->curr_s - car.s > 50) { //if vehicle is far away, do not take into account
         return car.desired_speed;
     }
     double currentSpeed = sqrt(ahead->curr_vx * ahead->curr_vx + ahead->curr_vy * ahead->curr_vy);
