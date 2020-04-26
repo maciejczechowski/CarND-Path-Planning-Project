@@ -62,7 +62,6 @@ void SensorFusion::setFusionData(vector<vector<double>> &fusionData) {
             car = fusion_map[fusionEntry[0]];
         }
 
-
         car->curr_x = fusionEntry[1];
         car->x.push_back(car->curr_x);
 
@@ -100,27 +99,6 @@ void SensorFusion::setFusionData(vector<vector<double>> &fusionData) {
             car->d.pop_front();
         }
 
-        if (car->x.size() < Helper::LookForward) {
-            car->curr_ax = 0;
-            car->curr_ay = 0;
-        } else {
-            int last_measurement = car->x.size();
-            int first_measurement = last_measurement - Helper::LookForward;
-            double v0x = car->vx[first_measurement];
-            double v0y = car->vy[first_measurement];
-
-            double x0 = car->x[first_measurement];
-            double y0 = car->y[first_measurement];
-            double sx = car->curr_x - x0;
-            double sy = car->curr_y - y0;
-            int t = Helper::LookForward * Helper::TICK;
-
-            double ax = (2 * (sx - v0x * t)) / (t * t);
-            double ay = (2 * (sy - v0y * t)) / (t * t);
-            car->curr_ax = ax;
-            car->curr_ay = ay;
-
-        }
         auto trajectory = predictions.predictTrajectory(*car, Helper::LookForward);
         delete car->predictedTrajectory;
         car->predictedTrajectory = trajectory;
@@ -176,8 +154,7 @@ vector<OtherCar *> SensorFusion::getAheadAndBehind(Car &car) {
             aheadIs[lane] = other_car.second->id;
         } else if (distance < behindDistances[lane]) {
             behindDistances[lane] = distance;
-            //std::cout << "Behind distance is " << distance << std::endl;
-            behindIds[lane] = other_car.second->id;
+             behindIds[lane] = other_car.second->id;
         }
 
     }

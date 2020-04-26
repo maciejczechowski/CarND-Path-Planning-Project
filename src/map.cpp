@@ -11,7 +11,6 @@
 
 
 void Map::load_map(string filename) {
-    double max_s = 6945.554;
 
     std::ifstream in_map_(filename.c_str(), std::ifstream::in);
 

@@ -22,38 +22,30 @@ Trajectory Planner::Execute(Trajectory &previousPath) {
     int currentLane = Helper::getLane(car.d);
     if (Helper::isFullyOnLane(car.d)) {
         if (currentLane != this->current_lane) {
-            std::cout << " Fully chaned lane to: " << currentLane << std::endl;
             this->current_lane = currentLane;
         }
-
-
     }
 
     auto trajectories = CalculateOptions(previousPath);
 
-
     Trajectory winning = trajectories[0];
     double winningCost = 99999999;
 
+
     std::string costDisplay = "costs: ";
-   // std::cout << "costs ";
     for (auto &t: trajectories) {
         double costValue = cost.calculateCost(t);
         costDisplay += "\t" + StateNames[t.forState]+ ": "+ std::to_string(costValue);
-
-
-      //  std::cout << "\t" << t.forState << ": " <<costValue;
         if (costValue < winningCost) {
             winningCost = costValue;
             winning = t;
         }
     }
-    std::cout << costDisplay << std::endl;
-
+//    std::cout << costDisplay << std::endl;
    if (current_state != winning.forState){
 
        std::cout << costDisplay << std::endl;
-       std::cout << "Swich to state: " << StateNames[winning.forState] << std::endl << std::endl;
+       std::cout << "Switch to state: " << StateNames[winning.forState] << std::endl << std::endl;
    }
     desired_lane = winning.finalLane;
     current_state = winning.forState;
@@ -114,21 +106,6 @@ Trajectory Planner::GetTrajectory(Trajectory &previousPath, int forLane, State f
     return trajectory;
 }
 
-//Trajectory Planner::ChangeLaneLeft(Trajectory &previousPath, int desiredLane) {
-//
-//    auto trajectory = trajectoryGenerator.getTrajectory(desiredLane, ref_velocity, car, previousPath);
-//    trajectory.finalLane = desiredLane;
-//    trajectory.forState = change_left;
-//    return trajectory;
-//}
-//
-//Trajectory Planner::ChangeLaneRight(Trajectory &previousPath, int desiredLane) {
-//
-//    auto trajectory = trajectoryGenerator.getTrajectory(desiredLane, ref_velocity, car, previousPath);
-//    trajectory.finalLane = desiredLane;
-//    return trajectory;
-//}
-
 double Planner::UpdateDesiredVelocity() {
     auto followedCar = sensorFusion.getVelocityAndDistanceToNearestInLane(current_lane, desired_lane, car);
     double distanceToOther = followedCar[1];
@@ -147,11 +124,8 @@ double Planner::UpdateDesiredVelocity() {
         following = true;
         auto ds = Helper::DesiredVelocityChange ;
         if (speedOfUs > speedOfOther) {
-
-          //  std::cout << "Lowering velocity " <<  std::min(ds, speedOfUs - speedOfOther)<< std::endl;
-            next_velocity -= std::min(ds, speedOfUs - speedOfOther);
+              next_velocity -= std::min(ds, speedOfUs - speedOfOther);
         } else if (distanceToOther > 30) {
-          //  std::cout << "Raising velocity our/ther" << std::max(ds, speedOfOther-speedOfUs) << std::endl;
             next_velocity += std::min(ds, speedOfOther-speedOfUs);
         }
     }

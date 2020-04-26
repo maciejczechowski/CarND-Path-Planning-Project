@@ -22,8 +22,6 @@ public:
 
     Trajectory Execute(Trajectory &previousPath);
 
-
-
 private:
     State current_state;
     TrajectoryGenerator &trajectoryGenerator;
@@ -34,14 +32,9 @@ private:
     int desired_lane;
     Car &car;
 
-   // Trajectory FollowTheLane(Trajectory &previousPath);
-
     double ref_velocity;
 
     double UpdateDesiredVelocity();
-
- //   Trajectory ChangeLaneLeft(Trajectory &previousPath);
-  //  Trajectory ChangeLaneRight(Trajectory &previousPath);
     Trajectory GetTrajectory(Trajectory &previousPath, int forLane, State forState);
 
     vector<Trajectory> CalculateOptions(Trajectory &previousPath);

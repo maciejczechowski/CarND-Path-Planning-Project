@@ -22,12 +22,9 @@ private:
     Map& map;
 
     double calculateEfficiencyCost(int finalLane);
-
     double calculateCollisionCost(Trajectory &trajectory);
-
     double calculateLaneChangeCost(int finalLane);
 
-    double CalculateVelocityCost(Trajectory &trajectory);
 };
 
 
