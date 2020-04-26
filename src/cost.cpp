@@ -10,7 +10,8 @@ double Cost::calculateCost(Trajectory &trajectory) {
 
     double cost = calculateEfficiencyCost(trajectory.finalLane)
                   + calculateCollisionCost(trajectory)
-                  + calculateLaneChangeCost(trajectory.finalLane) * 0.075;
+                  + calculateLaneChangeCost(trajectory.finalLane) * 0.075
+                  + trajectory.penalty;
 
     return cost;
 

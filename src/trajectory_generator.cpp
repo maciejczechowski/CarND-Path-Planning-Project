@@ -131,5 +131,5 @@ Trajectory TrajectoryGenerator::getTrajectory(int lane, double targetVelocity, C
         next_y_vals.push_back(y_point);
     }
 
-     return { next_x_vals, next_y_vals, lane};
+     return { next_x_vals, next_y_vals, lane, 0};
 }

@@ -78,7 +78,10 @@ vector<Trajectory> Planner::CalculateOptions(Trajectory &previousPath)
 
             } else { //not finished
                 trajectory_options.push_back( GetTrajectory(previousPath, desired_lane, change_left)); //continue maneuver
-            //   trajectory_options.push_back( GetTrajectory(previousPath, current_lane, change_right)); //abort maneuver
+
+                auto abortTrajectory = GetTrajectory(previousPath, current_lane, change_right);
+                abortTrajectory.penalty = 1;
+                trajectory_options.push_back( abortTrajectory ); //abort maneuver
             }
             break;
 
@@ -89,7 +92,10 @@ vector<Trajectory> Planner::CalculateOptions(Trajectory &previousPath)
 
             } else { //not finished
                 trajectory_options.push_back( GetTrajectory(previousPath, desired_lane, change_right)); //continue maneuver
-              // trajectory_options.push_back( GetTrajectory(previousPath, current_lane, change_left)); //abort maneuver
+
+                auto abortTrajectory = GetTrajectory(previousPath, current_lane, change_left);
+                abortTrajectory.penalty = 1;
+                trajectory_options.push_back(abortTrajectory ); //abort maneuver
             }
 
     }
@@ -115,7 +121,11 @@ double Planner::UpdateDesiredVelocity() {
     double next_velocity = ref_velocity;
     bool following = false;
     //way too close - brake!
-    if (distanceToOther < 20) {
+    if (distanceToOther < 10) {
+        following = true;
+        next_velocity -= Helper::DesiredVelocityChange * 2;
+        std::cout << "EMERGENCY BRAKE!" << std::endl;
+    } else if (distanceToOther < 20) {
         following = true;
         next_velocity -= Helper::DesiredVelocityChange * 1.5;
         std::cout << "BRAKE!" << std::endl;

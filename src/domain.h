@@ -25,8 +25,9 @@ public:
     std::vector<double> y_values;
 
     int finalLane;
+    double penalty;
     double velocity;
-    double end_path_s;
+
     State forState;
 
 };
