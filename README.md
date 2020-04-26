@@ -5,7 +5,7 @@ Self-Driving Car Engineer Nanodegree Program
 This repository contains code for the Path Planning project of the Self-Driving Car Engineer Nanodegree Program on Udacity.
 It can be run using Term3 Simulator, available [here](https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2)
 
-##Project structure
+## Project structure
 The whole path planner is grouped into several modules:
  * `Map` - responsible for loading the map and doing coordinate transformations
  * `Planner` - main planner, finite state machine that finds the next trajectory
@@ -80,7 +80,7 @@ Cost has the following factors:
 3. Lane change  - we don't want our car to switch lanes constantly. This adds a penalty if desired lane is current lane. Additionally, a small penalty is added if desired lane is different than middle: We want to encourage car to get into middle lane if it is efficient, as this gives us more possibilities in the future.
 4. Penalty - if the trajectory for an emergency one, add it's penalty so it won't be chosen unless others are colliding.  
 
-####Collision detection
+#### Collision detection
 Collision detection is critical factor for evaluating trajectories. We don't want to choose a trajectory that would lead to collision.
 The process is defined in `Cost::calculateCollisionCost` and can be described as follows:
 1. Get the cars (from `SensorFusion`) ahead and behind us on our lane
@@ -91,7 +91,7 @@ The process is defined in `Cost::calculateCollisionCost` and can be described as
 Note that this calculation is simplified as it basically treats cars as circles (since only euclidian distance is used). As a consequence, car drives rather conservatively, needing a lot of space to change lanes. No aggresive merges here.
 Additionally, hitting a car on current lane is less penalized than hitting after changing. Emergency braking is already uncomfortable, we don't want to add additional lateral forces to the process.
 
-###Sensor Fusion
+### Sensor Fusion
 `SensorFusion` keeps track of the other vehicle on road. Each time we get the new set of data, we:
 1. Update current state of other car
 2. Add the state to history of other car
@@ -101,7 +101,7 @@ History is capped at 100, meaning old entries are removed.
 
 `SensorFusion` provides a set of utility functions for finding the closet vehicles ahead/behind our car.
 
-###Predictions
+### Predictions
 Prediction module is every time we get the new SensorFusion data to evaluate where the other cars will be in the future.
 Future horizon is defined globally (`Helpers, LookForward`) as 50 ticks, which corresponds to 1s.
 
