@@ -21,7 +21,7 @@ public:
     //returns data in form {velocity, distance} of the nearest car in the given lane
     vector<double> getVelocityAndDistanceToNearestInLane(int current_lane, int target_lane, Car &car);
 
-    vector<OtherCar*> getAheadAndBehind(int lane, Car &car);
+    vector<OtherCar*> getAheadAndBehind(int lane, int target_lane, Car &car);
     vector<OtherCar*> getAheadAndBehind(Car &car);
 
 private:

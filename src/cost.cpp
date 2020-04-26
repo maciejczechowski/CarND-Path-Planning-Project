@@ -88,7 +88,7 @@ double Cost::calculateCollisionCost(Trajectory &trajectory) {
 }
 
 double Cost::getLaneSpeed(int lane) {
-    vector<OtherCar *> cars = sensorFusion.getAheadAndBehind(lane, car);
+    vector<OtherCar *> cars = sensorFusion.getAheadAndBehind(lane, lane, car);
 
     OtherCar *ahead = cars[0];
     if (ahead == nullptr || ahead->curr_s - car.s > 100) { //if vehicle is far away, do not take into account

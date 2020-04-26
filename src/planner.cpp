@@ -113,37 +113,54 @@ Trajectory Planner::GetTrajectory(Trajectory &previousPath, int forLane, State f
 }
 
 double Planner::UpdateDesiredVelocity() {
-    auto followedCar = sensorFusion.getVelocityAndDistanceToNearestInLane(current_lane, desired_lane, car);
-    double distanceToOther = followedCar[1];
-    double speedOfOther = followedCar[0];
-    double speedOfUs = Helper::mph2mps(car.speed);
+    auto followedCar = sensorFusion.getAheadAndBehind(current_lane, desired_lane, car);
 
+    double speedOfUs = Helper::mph2mps(car.speed);
     double next_velocity = ref_velocity;
-    bool following = false;
-    //way too close - brake!
-    if (distanceToOther < 10) {
-        following = true;
-        next_velocity -= Helper::DesiredVelocityChange * 2;
-        std::cout << "EMERGENCY BRAKE!" << std::endl;
-    } else if (distanceToOther < 20) {
-        following = true;
-        next_velocity -= Helper::DesiredVelocityChange * 1.5;
-        std::cout << "BRAKE!" << std::endl;
-    } else
-        if (distanceToOther < 40) {
-        following = true;
-        auto ds = Helper::DesiredVelocityChange ;
-        if (speedOfUs > speedOfOther) {
-              next_velocity -= std::min(ds, speedOfUs - speedOfOther);
-        } else if (distanceToOther > 30) {
-            next_velocity += std::min(ds, speedOfOther-speedOfUs);
+
+    bool likely_to_be_driven_into = false;
+
+    if (followedCar[1] != nullptr){ //check distance to on behind us, they like to drive into us
+        auto distanceRear = fabs(car.s - followedCar[1]->curr_s);
+        if (distanceRear < 10){
+            likely_to_be_driven_into = true;
         }
     }
 
-    if (!following && next_velocity < car.desired_speed) {
+    bool likely_to_hit;
+    bool following = false;
+
+    if (followedCar[0] != nullptr) {
+        auto distanceToOther = fabs(followedCar[0]->curr_s - car.s);
+        auto speedOfOther = sqrt(followedCar[0]->curr_vx * followedCar[0]->curr_vx + followedCar[0]->curr_vy * followedCar[0]->curr_vy);
+        //way too close - brake!
+        if (distanceToOther < 10) {
+            following = true;
+            likely_to_hit = true;
+            next_velocity -= Helper::DesiredVelocityChange * 2;
+            std::cout << "EMERGENCY BRAKE!" << std::endl;
+        } else if (distanceToOther < 20) {
+            following = true;
+            next_velocity -= Helper::DesiredVelocityChange * 1.5;
+            std::cout << "BRAKE!" << std::endl;
+        } else if (distanceToOther < 40) {
+            following = true;
+            auto ds = Helper::DesiredVelocityChange;
+            if (speedOfUs > speedOfOther) {
+                next_velocity -= std::min(ds, speedOfUs - speedOfOther);
+            } else if (distanceToOther > 30) {
+                next_velocity += std::min(ds, speedOfOther - speedOfUs);
+            }
+        }
+
+    }
+    if (!likely_to_be_driven_into && !following && next_velocity < car.desired_speed) {
         next_velocity += Helper::DesiredVelocityChange;
     }
 
+    if (likely_to_be_driven_into && !likely_to_hit){
+        next_velocity = ref_velocity + 1.8*Helper::DesiredVelocityChange;
+    }
     if (next_velocity < 0) {
         next_velocity = 0;
     } else if (next_velocity > car.desired_speed){

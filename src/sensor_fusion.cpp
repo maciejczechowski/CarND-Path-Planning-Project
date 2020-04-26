@@ -106,7 +106,7 @@ void SensorFusion::setFusionData(vector<vector<double>> &fusionData) {
     }
 }
 
-vector<OtherCar *> SensorFusion::getAheadAndBehind(int lane, Car &car) {
+vector<OtherCar *> SensorFusion::getAheadAndBehind(int lane, int target_lane, Car &car) {
     OtherCar *otherAhead = nullptr;
     OtherCar *otherBehind = nullptr;
     double minDistAhead = 999999;
@@ -114,9 +114,9 @@ vector<OtherCar *> SensorFusion::getAheadAndBehind(int lane, Car &car) {
 
     for (auto &other_car : fusion_map) {
         double other_d = other_car.second->curr_d;
-
+        auto otherLane = Helper::getLane(other_d);
         //in the desired lane?
-        if (other_d < (2.0 + 4.0 * lane + 2.0) && other_d > (2.0 + 4 * lane - 2.0)) {
+        if ( otherLane == lane || otherLane == target_lane ){
             double other_car_s = other_car.second->curr_s;
             double distance = fabs(car.s - other_car_s);
             if (other_car_s > car.s && distance < minDistAhead) {
