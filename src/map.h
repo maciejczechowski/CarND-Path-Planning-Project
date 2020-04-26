@@ -6,7 +6,6 @@
 #define PATH_PLANNING_MAP_H
 #include <vector>
 #include <string>
-#include "spline.h"
 using std::vector;
 using std::string;
 
@@ -25,15 +24,6 @@ private:
     vector<double> map_waypoints_s;
     vector<double> map_waypoints_dx;
     vector<double> map_waypoints_dy;
-
-    vector<double> map_waypoints_normx;
-    vector<double> map_waypoints_normy;
-
-    tk::spline spline_x;
-    tk::spline spline_y;
-    tk::spline spline_dx;
-    tk::spline spline_dy;
-
 };
 
 

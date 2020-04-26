@@ -138,7 +138,7 @@ double Planner::UpdateDesiredVelocity() {
     double next_velocity = ref_velocity;
     bool following = false;
     //way too close - brake!
-    if (distanceToOther < 10) {
+    if (distanceToOther < 20) {
         following = true;
         next_velocity -= Helper::DesiredVelocityChange * 1.5;
         std::cout << "BRAKE!" << std::endl;
@@ -150,7 +150,7 @@ double Planner::UpdateDesiredVelocity() {
 
           //  std::cout << "Lowering velocity " <<  std::min(ds, speedOfUs - speedOfOther)<< std::endl;
             next_velocity -= std::min(ds, speedOfUs - speedOfOther);
-        } else {
+        } else if (distanceToOther > 30) {
           //  std::cout << "Raising velocity our/ther" << std::max(ds, speedOfOther-speedOfUs) << std::endl;
             next_velocity += std::min(ds, speedOfOther-speedOfUs);
         }
